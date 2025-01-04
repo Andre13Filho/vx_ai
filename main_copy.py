@@ -90,7 +90,7 @@ def chain_tec(tec):
     if input_user== None:
        input_user = ''
 
-    chat = ChatGroq(model='llama3-8b-8192', api_key=api_key)
+    chat = ChatGroq(model='llama3-8b-8192', api_key='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')
 
     if tec == 'Sika':
       system_message = sika_message.format(context=pdf_load(documentos_Sika, input_user))
