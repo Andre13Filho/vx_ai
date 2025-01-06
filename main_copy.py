@@ -10,7 +10,8 @@ from langchain_groq import ChatGroq
 from system_messages import *
 import os
 
-#load_dotenv()
+load_dotenv()
+api_key = os.getenv("GROQ_API_KEY")
 tecnicos = ['(Selecione um técnico)','Sika', "MC Bauchemie", "Viapol", "Vedacit", "Dryko", "Denver"]
 
 if 'tecnico_selecionado' not in st.session_state:
@@ -23,7 +24,6 @@ def sidebar():
   st.sidebar.image('./img/logo.jpg')
   tabs = st.sidebar.tabs(['Técnicos'])
   with tabs[0]:
-    api_key = st.sidebar.text_input("Insira sua chave da API Groq:")
     tecnico = st.sidebar.selectbox('Lista de técnicos', tecnicos)
     confirm = st.sidebar.button("Confirmar", type='primary')
 
@@ -32,7 +32,6 @@ def sidebar():
         st.session_state['chat_memory'] = ConversationBufferMemory()  # Resetar a memória
         st.session_state['tecnico_selecionado'] = tecnico
         st.session_state['tecnico'] = tecnico
-        st.session_state['api_key'] = api_key
         mensagem = f'Seja bem-vindo a VX AI! Sou seu técnico em impermeabilização especialista dos produtos {tecnico}. Em que posso ajudar hoje?'
         st.session_state['chat_memory'].chat_memory.add_ai_message(mensagem)
         st.rerun()
@@ -90,8 +89,6 @@ def chain_tec(tec):
     input_user = st.session_state.get('input_human')
     if input_user== None:
        input_user = ''
-
-    api_key = st.session_state.get('api_key') 
     
     chat = ChatGroq(model='llama3-8b-8192', api_key=api_key)
 
