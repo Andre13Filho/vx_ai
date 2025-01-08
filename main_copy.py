@@ -21,6 +21,7 @@ if 'chat_memory' not in st.session_state:
 
 #configuração da side bar
 def sidebar():
+  st.sidebar.title('VX AI')
   st.sidebar.image('./img/logo.jpg')
   tabs = st.sidebar.tabs(['Técnicos'])
   with tabs[0]:
@@ -30,8 +31,10 @@ def sidebar():
   #configuração para parecer a primeira mensagem e de reset do histórico
   if tecnico != '(Selecione um técnico)' and tecnico != st.session_state['tecnico_selecionado'] and confirm:
         st.session_state['chat_memory'] = ConversationBufferMemory()  # Resetar a memória
+        historico = []
         st.session_state['tecnico_selecionado'] = tecnico
         st.session_state['tecnico'] = tecnico
+        st.session_state['historico'] = historico
         mensagem = f'Seja bem-vindo a VX AI! Sou seu técnico em impermeabilização especialista dos produtos {tecnico}. Em que posso ajudar hoje?'
         st.session_state['chat_memory'].chat_memory.add_ai_message(mensagem)
         st.rerun()
@@ -39,7 +42,7 @@ def sidebar():
 #função para tratar do funcionamento e memória do chat
 def chat():
   tec = st.session_state.get('tecnico')
-
+  historico = st.session_state.get('historico')
   for msg in st.session_state['chat_memory'].chat_memory.messages:
         if msg.type == "human":
             st.chat_message("user").write(msg.content)
@@ -61,10 +64,14 @@ def chat():
     chat = st.chat_message('ai')
     awnser = chat.write_stream(chain.stream({
       "input": input_human,
-      "chat_history": st.session_state['chat_memory']
+      "chat_history": historico
       })) 
     st.session_state['chat_memory'].chat_memory.add_user_message(input_human)
     st.session_state['chat_memory'].chat_memory.add_ai_message(awnser)
+    historico.extend([input_human, awnser])
+    if len(historico) > 6:
+       historico[2:]
+    st.session_state['historico'] = historico
 
 # Função para fazer o procedimento de RAG
 def pdf_load(documentos, input_human):
@@ -86,6 +93,7 @@ def pdf_load(documentos, input_human):
 
 #configuração da chain
 def chain_tec(tec):
+    historico = st.session_state.get('historico')
     input_user = st.session_state.get('input_human')
     if input_user== None:
        input_user = ''
@@ -93,25 +101,25 @@ def chain_tec(tec):
     chat = ChatGroq(model='llama3-8b-8192', api_key=api_key)
 
     if tec == 'Sika':
-      system_message = sika_message.format(context=pdf_load(documentos_Sika, input_user))
+      system_message = tecnico_message.format(tecnico=tec, context=pdf_load(documentos_Sika, input_user))
 
     if tec == 'MC Bauchemie':
-       system_message = mc_message.format(context=pdf_load(documentos_mc, input_user))
+       system_message = tecnico_message.format(tecnico=tec, context=pdf_load(documentos_mc, input_user))
     
     if tec == 'Viapol':
-      system_message = viapol_message.format(context=pdf_load(documentos_viapol, input_user))
+      system_message = tecnico_message.format(tecnico=tec, context=pdf_load(documentos_viapol, input_user))
 
     if tec == 'Vedacit':
-       system_message = vedacit_message.format(context=pdf_load(documentos_vedacit, input_user))
+       system_message = tecnico_message.format(tecnico=tec, context=pdf_load(documentos_vedacit, input_user))
 
     if tec == 'Denver':
-      system_message = denver_message.format(context=pdf_load(documentos_denver, input_user))
+      system_message = tecnico_message.format(tecnico=tec, context=pdf_load(documentos_denver, input_user))
 
     if tec == 'Dryko':
-       system_message = dryko_message.format(context=pdf_load(documentos_dryko, input_user))
+       system_message = tecnico_message.format(tecnico=tec, context=pdf_load(documentos_dryko, input_user))
 
     template = ChatPromptTemplate.from_messages([('system', system_message), 
-                                                ('placeholder', '{{chat_history}}'), 
+                                                ('placeholder', '{chat_history}'), 
                                                 ('user', '{input}'),
                                                 ])
     chain = template | chat
