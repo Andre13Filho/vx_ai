@@ -31,10 +31,8 @@ def sidebar():
   #configuração para parecer a primeira mensagem e de reset do histórico
   if tecnico != '(Selecione um técnico)' and tecnico != st.session_state['tecnico_selecionado'] and confirm:
         st.session_state['chat_memory'] = ConversationBufferMemory()  # Resetar a memória
-        historico = []
         st.session_state['tecnico_selecionado'] = tecnico
         st.session_state['tecnico'] = tecnico
-        st.session_state['historico'] = historico
         mensagem = f'Seja bem-vindo a VX AI! Sou seu técnico em impermeabilização especialista dos produtos {tecnico}. Em que posso ajudar hoje?'
         st.session_state['chat_memory'].chat_memory.add_ai_message(mensagem)
         st.rerun()
@@ -42,7 +40,6 @@ def sidebar():
 #função para tratar do funcionamento e memória do chat
 def chat():
   tec = st.session_state.get('tecnico')
-  historico = st.session_state.get('historico')
   for msg in st.session_state['chat_memory'].chat_memory.messages:
         if msg.type == "human":
             st.chat_message("user").write(msg.content)
@@ -64,14 +61,10 @@ def chat():
     chat = st.chat_message('ai')
     awnser = chat.write_stream(chain.stream({
       "input": input_human,
-      "chat_history": historico
+      "chat_history": [msg.content for msg in st.session_state['chat_memory'].chat_memory.messages]
       })) 
     st.session_state['chat_memory'].chat_memory.add_user_message(input_human)
     st.session_state['chat_memory'].chat_memory.add_ai_message(awnser)
-    historico.extend([input_human, awnser])
-    if len(historico) > 6:
-       historico[2:]
-    st.session_state['historico'] = historico
 
 # Função para fazer o procedimento de RAG
 def pdf_load(documentos, input_human):
@@ -93,7 +86,6 @@ def pdf_load(documentos, input_human):
 
 #configuração da chain
 def chain_tec(tec):
-    historico = st.session_state.get('historico')
     input_user = st.session_state.get('input_human')
     if input_user== None:
        input_user = ''
